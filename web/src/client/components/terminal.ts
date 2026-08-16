@@ -72,6 +72,7 @@ export class Terminal extends LitElement {
   private lastTouchY = 0;
   private touchScrollRemainder = 0;
   private touchScrolling = false;
+  private wheelScrollRemainder = 0;
 
   private isMobile = false;
   private lastCols = 0;
@@ -337,6 +338,76 @@ export class Terminal extends LitElement {
     this.touchScrollRemainder = 0;
   };
 
+  // ghostty-web's built-in wheel handling rounds each event independently, so the
+  // small per-event deltas from trackpads (Chrome/Safari two-finger scroll) round
+  // to zero; it also restarts its smooth-scroll animation from the in-flight
+  // position, losing distance at trackpad event rates. Accumulate deltas across
+  // events and scroll whole lines instead.
+  private handleTerminalWheel = (event: WheelEvent): boolean => {
+    const term = this.terminal;
+    if (!term) return false;
+
+    const lineHeight = Math.max(1, term.renderer?.getMetrics().height ?? this.fontSize * 1.2);
+    let deltaPixels: number;
+    if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      deltaPixels = event.deltaY * lineHeight;
+    } else if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      deltaPixels = event.deltaY * this.rows * lineHeight;
+    } else {
+      deltaPixels = event.deltaY;
+    }
+
+    this.wheelScrollRemainder += deltaPixels;
+    const lines = Math.trunc(this.wheelScrollRemainder / lineHeight);
+    if (lines === 0) return true;
+    this.wheelScrollRemainder -= lines * lineHeight;
+
+    if (term.wasmTerm?.hasMouseTracking()) {
+      // The app asked for mouse events (TUIs like Claude Code, vim with mouse=a):
+      // it scrolls its own content on wheel reports, while arrow keys would move
+      // input focus instead. Send SGR wheel reports at the pointer's cell.
+      const count = Math.min(Math.abs(lines), 15);
+      const button = lines > 0 ? 65 : 64;
+      const { col, row } = this.wheelEventCell(event, lineHeight);
+      this.dispatchEvent(
+        new CustomEvent('terminal-input', {
+          detail: { text: `\x1b[<${button};${col};${row}M`.repeat(count) },
+          bubbles: true,
+        })
+      );
+      this.wheelScrollRemainder = 0;
+    } else if (term.wasmTerm?.isAlternateScreen()) {
+      // No scrollback and no mouse reporting; arrow keys are the only scroll
+      // affordance (less, man). Capped per event so a hard flick doesn't flood
+      // the PTY.
+      const key = lines > 0 ? '\x1b[B' : '\x1b[A';
+      const count = Math.min(Math.abs(lines), 15);
+      this.dispatchEvent(
+        new CustomEvent('terminal-input', {
+          detail: { text: key.repeat(count) },
+          bubbles: true,
+        })
+      );
+      this.wheelScrollRemainder = 0;
+    } else {
+      term.scrollLines(lines);
+    }
+    return true;
+  };
+
+  private wheelEventCell(event: WheelEvent, lineHeight: number): { col: number; row: number } {
+    const rect = this.container?.getBoundingClientRect();
+    const cellWidth = Math.max(
+      1,
+      this.terminal?.renderer?.getMetrics().width ?? this.fontSize * 0.6
+    );
+    const x = rect ? event.clientX - rect.left : 0;
+    const y = rect ? event.clientY - rect.top : 0;
+    const col = Math.min(Math.max(1, Math.floor(x / cellWidth) + 1), Math.max(1, this.cols));
+    const row = Math.min(Math.max(1, Math.floor(y / lineHeight) + 1), Math.max(1, this.rows));
+    return { col, row };
+  }
+
   private attachTouchScrollHandlers() {
     this.container?.addEventListener('touchstart', this.handleTerminalTouchStart, {
       passive: true,
@@ -542,6 +613,17 @@ export class Terminal extends LitElement {
 
       // ghostty-web does not translate touch pans into scrollback movement.
       this.attachTouchScrollHandlers();
+      term.attachCustomWheelEventHandler(this.handleTerminalWheel);
+      this.wheelScrollRemainder = 0;
+
+      // ghostty-web marks the container contenteditable, so on touch devices every
+      // tap (including scroll-gesture taps) would summon the native keyboard. The
+      // soft keyboard must only open via the explicit keyboard button, which uses
+      // its own hidden input; hardware keyboards are unaffected by inputmode=none.
+      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        container.setAttribute('inputmode', 'none');
+        term.textarea?.setAttribute('inputmode', 'none');
+      }
 
       if (this.pendingOutput) {
         const pending = this.pendingOutput;
@@ -588,6 +670,12 @@ export class Terminal extends LitElement {
 
   private handleClick = (e: MouseEvent) => {
     if (this.disableClick) return;
+    if (this.isMobile) {
+      // On touch devices the soft keyboard must only open via the explicit
+      // keyboard button; focusing the paste textarea here would summon it on
+      // every tap or scroll release.
+      return;
+    }
     const target = e.target as HTMLElement | null;
     if (target?.closest('a[href]')) {
       // Keep native link behavior (especially important on mobile browsers).

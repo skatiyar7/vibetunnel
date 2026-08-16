@@ -50,7 +50,6 @@ import { UIStateManager } from './session-view/ui-state-manager.js';
 // Components
 import './session-view/terminal-renderer.js';
 import './session-view/overlays-container.js';
-import './mobile-action-bar.js';
 import type { Terminal } from './terminal.js';
 
 // Extend Window interface to include our custom property
@@ -764,15 +763,29 @@ export class SessionView extends LitElement {
     // Toggle the chat mode
     this.uiStateManager.toggleChatMode();
   }
+  private handleQuickKeysButtonClick() {
+    // Toggle the quick-keys bar WITHOUT raising the native keyboard.
+    const showing = this.uiStateManager.getState().showQuickKeys;
+    if (showing) {
+      this.directKeyboardManager.setShowQuickKeys(false);
+      this.uiStateManager.setShowQuickKeys(false);
+    } else {
+      this.directKeyboardManager.showQuickKeysOnly();
+      this.uiStateManager.setShowQuickKeys(true);
+    }
+    this.updateTerminalTransform();
+    this.requestUpdate();
+  }
+
   private handleKeyboardButtonClick() {
-    // Show quick keys immediately for visual feedback
+    // Explicit native keyboard request: show quick keys and focus the hidden input.
     this.uiStateManager.setShowQuickKeys(true);
 
     // Update terminal transform immediately
     this.updateTerminalTransform();
 
     // Focus the hidden input synchronously - critical for iOS Safari.
-    // forceRecreate=true: the user explicitly tapped TAP to (re)open the keyboard, so
+    // forceRecreate=true: the user explicitly asked to (re)open the keyboard, so
     // recreate the input so iOS reliably reopens it even if the soft keyboard was
     // dismissed while the quick keys stayed open (avoids the intermittent race).
     this.directKeyboardManager.focusHiddenInput(true);
@@ -995,121 +1008,6 @@ export class SessionView extends LitElement {
     this.directKeyboardManager.delayedRefocusHiddenInputPublic();
   }
 
-  private renderQuickKeysContent(uiState: ReturnType<UIStateManager['getState']>) {
-    // Mobile: Quick keys in action bar
-    if (uiState.isMobile && uiState.showQuickKeys) {
-      return html`
-        <div class="mobile-action-keys">
-          <button
-            class="mobile-action-key"
-            @click=${() => this.directKeyboardManager.handleQuickKeyPress('Escape')}
-          >
-            ESC
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => {
-              this.directKeyboardManager.handleQuickKeyPress('Command', true);
-            }}
-            @touchstart=${(e: TouchEvent) => {
-              e.preventDefault();
-            }}
-            @touchend=${(e: TouchEvent) => {
-              e.preventDefault();
-              this.directKeyboardManager.handleQuickKeyPress('Command', true);
-            }}
-          >
-            ⌘
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => {
-              this.directKeyboardManager.handleQuickKeyPress('/');
-            }}
-            @touchstart=${(e: TouchEvent) => {
-              e.preventDefault();
-            }}
-            @touchend=${(e: TouchEvent) => {
-              e.preventDefault();
-              this.directKeyboardManager.handleQuickKeyPress('/');
-            }}
-          >
-            /
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => this.directKeyboardManager.handleQuickKeyPress('Tab')}
-          >
-            TAB
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => this.directKeyboardManager.handleQuickKeyPress('ArrowUp')}
-          >
-            ↑
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => this.directKeyboardManager.handleQuickKeyPress('ArrowDown')}
-          >
-            ↓
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => this.directKeyboardManager.handleQuickKeyPress('ArrowLeft')}
-          >
-            ←
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => this.directKeyboardManager.handleQuickKeyPress('ArrowRight')}
-          >
-            →
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => {
-              this.directKeyboardManager.handleQuickKeyPress('CtrlFull', false, true);
-            }}
-          >
-            CTRL
-          </button>
-          <button
-            class="mobile-action-key"
-            @click=${() => {
-              this.directKeyboardManager.handleQuickKeyPress('Done', false, true);
-            }}
-            @touchstart=${(e: TouchEvent) => {
-              e.preventDefault();
-            }}
-            @touchend=${(e: TouchEvent) => {
-              e.preventDefault();
-              this.directKeyboardManager.handleQuickKeyPress('Done', false, true);
-            }}
-          >
-            Done
-          </button>
-        </div>
-      `;
-    }
-
-    return '';
-  }
-
-  // Mobile Action Bar Callback Methods
-  private handleClaudeModeToggle(mode: 'plan' | 'auto-accept' | 'normal') {
-    logger.debug(`Toggling Claude mode to: ${mode}`);
-    // This would integrate with Claude Code mode switching
-    // For now, just log the action
-    this.dispatchEvent(
-      new CustomEvent('claude-mode-change', {
-        detail: { mode },
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
   private async handleClipboardPaste() {
     try {
       if (navigator.clipboard?.readText) {
@@ -1120,54 +1018,6 @@ export class SessionView extends LitElement {
       }
     } catch (error) {
       logger.error('Failed to paste from clipboard:', error);
-    }
-  }
-
-  private handleShowClipboardHistory() {
-    // This will be handled by the mobile action bar's clipboard manager
-    logger.debug('Show clipboard history requested');
-  }
-
-  private handleShowSlashCommands() {
-    // This will be handled by the mobile action bar's slash commands modal
-    logger.debug('Show slash commands requested');
-  }
-
-  private handleExecuteSlashCommand(command: string) {
-    if (this.inputManager) {
-      this.inputManager.sendInputText(command);
-    }
-  }
-
-  private handleThemeToggle() {
-    // Dispatch theme toggle event
-    this.dispatchEvent(
-      new CustomEvent('theme-toggle', {
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
-  private handleHideKeyboard() {
-    this.uiStateManager.setShowQuickKeys(false);
-  }
-
-  private async handleSendInput(text: string) {
-    if (this.inputManager) {
-      await this.inputManager.sendInputText(text);
-    }
-  }
-
-  private handleHapticFeedback(type: 'light' | 'medium' | 'heavy') {
-    // Implement haptic feedback for supported devices
-    if ('vibrate' in navigator) {
-      const patterns = {
-        light: [10],
-        medium: [20],
-        heavy: [50],
-      };
-      navigator.vibrate(patterns[type]);
     }
   }
 
@@ -1271,10 +1121,6 @@ export class SessionView extends LitElement {
             box-sizing: border-box;
           }
           
-          .quickkeys-area {
-            grid-area: quickkeys;
-          }
-          
           /* Overlay container - spans entire grid */
           .overlay-container {
             grid-area: 1 / 1 / -1 / -1;
@@ -1349,13 +1195,6 @@ export class SessionView extends LitElement {
             transform: none !important;
           }
           
-          .quickkeys-area {
-            /* Will be styled as mobile-action-bar */
-            flex-shrink: 0 !important;
-            position: sticky !important;
-            bottom: 0 !important;
-            z-index: 10 !important;
-          }
 
           /* Mobile: Overlay positioning */
           .overlay-container {
@@ -1367,18 +1206,6 @@ export class SessionView extends LitElement {
             pointer-events: none !important;
             z-index: 20 !important;
           }
-        }
-
-        /* <mobile-action-bar> renders fixed content; its host must not consume grid or
-           flex space, including when a phone is wider than the CSS mobile breakpoint. */
-        .session-view-grid[data-mobile="true"] > mobile-action-bar {
-          flex-shrink: 0 !important;
-          height: 0 !important;
-          min-height: 0 !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          border: none !important;
-          overflow: visible !important;
         }
         
         .overlay-container > * {
@@ -1431,6 +1258,9 @@ export class SessionView extends LitElement {
             .onToggleViewMode=${() => this.sessionActionsHandler.handleToggleViewMode()}
             .chatMode=${uiState.chatMode}
             .onToggleChatMode=${() => this.handleToggleChatMode()}
+            .onShowQuickKeys=${() => this.handleQuickKeysButtonClick()}
+            .onShowKeyboard=${() => this.handleKeyboardButtonClick()}
+            .onPasteClipboard=${() => this.handleClipboardPaste()}
             @close-width-selector=${() => {
               this.uiStateManager.setShowWidthSelector(false);
               this.uiStateManager.setCustomWidth('');
@@ -1536,67 +1366,6 @@ export class SessionView extends LitElement {
           }
         </div>
 
-        <!-- Quick Keys Area / Mobile Action Bar -->
-        ${
-          uiState.isMobile
-            ? html`
-          <mobile-action-bar
-            .visible=${!uiState.showQuickKeys}
-            .session=${this.session}
-            .keyboardVisible=${uiState.keyboardHeight > 0}
-            .keyboardHeight=${uiState.keyboardHeight}
-            .currentMode=${'normal'}
-            .callbacks=${(() => {
-              const callbacks = {
-                // Command palette callbacks
-                onTogglePlanMode: () => this.handleClaudeModeToggle('plan'),
-                onToggleAutoAccept: () => this.handleClaudeModeToggle('auto-accept'),
-                onToggleNormalMode: () => this.handleClaudeModeToggle('normal'),
-
-                // Clipboard callbacks
-                onPasteFromClipboard: () => this.handleClipboardPaste(),
-                onShowClipboardHistory: () => this.handleShowClipboardHistory(),
-
-                // Slash commands callbacks
-                onShowSlashCommands: () => this.handleShowSlashCommands(),
-                onExecuteSlashCommand: (command: string) => this.handleExecuteSlashCommand(command),
-
-                // Session management callbacks
-                onCreateSession: () => this.dispatchEvent(new CustomEvent('navigate-to-list')), // Navigate back to create new session
-                onTerminateSession: () => this.sessionActionsHandler.handleTerminateSession(),
-                onClearSession: () => this.sessionActionsHandler.handleClearSession(),
-
-                // File operations callbacks
-                onOpenFileBrowser: () => this.fileOperationsManager.openFileBrowser(),
-                onUploadFile: () => this.fileOperationsManager.openFilePicker(),
-                onUploadImage: () => this.fileOperationsManager.selectImage(),
-
-                // Terminal settings callbacks
-                onOpenTerminalSettings: () => this.terminalSettingsManager.handleMaxWidthToggle(), // Open width selector as settings
-                onToggleTheme: () => this.handleThemeToggle(),
-
-                // Navigation callbacks
-                onNavigateBack: () => this.handleBack(),
-                onToggleSidebar: () => this.handleSidebarToggle(),
-
-                // Mobile-specific callbacks
-                onShowKeyboard: () => this.handleKeyboardButtonClick(),
-                onHideKeyboard: () => this.handleHideKeyboard(),
-                onSendInput: (text: string) => this.handleSendInput(text),
-                onTriggerHaptic: (type: 'light' | 'medium' | 'heavy') =>
-                  this.handleHapticFeedback(type),
-              };
-              return callbacks;
-            })()}
-          ></mobile-action-bar>
-        `
-            : html`
-          <div class="quickkeys-area ${!uiState.showQuickKeys ? 'hidden' : ''}">
-            ${this.renderQuickKeysContent(uiState)}
-          </div>
-        `
-        }
-
         <!-- Overlay Container - All overlays go here for stable positioning -->
         <div class="overlay-container">
           <overlays-container
@@ -1639,7 +1408,6 @@ export class SessionView extends LitElement {
               },
 
               // Keyboard button
-              onKeyboardButtonClick: () => this.handleKeyboardButtonClick(),
 
               // Navigation
               handleBack: () => this.handleBack(),

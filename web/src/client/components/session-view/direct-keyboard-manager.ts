@@ -140,6 +140,14 @@ export class DirectKeyboardManager extends ManagerEventEmitter {
     }
   }
 
+  showQuickKeysOnly(): void {
+    // Quick keys without the native keyboard: no keyboard mode, no hidden-input
+    // focus, no focus retention. The native keyboard stays down until the user
+    // explicitly requests it via the keyboard button.
+    this.showQuickKeys = true;
+    this.callbacks?.updateShowQuickKeys(true);
+  }
+
   focusHiddenInput(forceRecreate = false): void {
     logger.log('Entering keyboard mode');
 
@@ -753,11 +761,12 @@ export class DirectKeyboardManager extends ManagerEventEmitter {
       }
     }
 
-    // Always keep focus on hidden input after any key press (except Done)
-    // Use requestAnimationFrame to ensure DOM has updated
+    // Keep focus on hidden input after any key press (except Done), but ONLY when
+    // the user explicitly opened the native keyboard: refocusing outside keyboard
+    // mode would summon the iOS keyboard from a plain quick-key tap.
     requestAnimationFrame(() => {
       const disableFocusManagement = this.callbacks?.getDisableFocusManagement() ?? false;
-      if (!disableFocusManagement && this.hiddenInput && this.showQuickKeys) {
+      if (!disableFocusManagement && this.keyboardMode && this.hiddenInput && this.showQuickKeys) {
         this.hiddenInput.focus();
       }
     });
@@ -786,9 +795,11 @@ export class DirectKeyboardManager extends ManagerEventEmitter {
         return;
       }
 
-      // Normal focus retention for quick keys
+      // Normal focus retention for quick keys — only while the native keyboard was
+      // explicitly opened (keyboard mode); otherwise refocusing would summon it.
       if (
         !disableFocusManagement &&
+        this.keyboardMode &&
         this.showQuickKeys &&
         this.hiddenInput &&
         document.activeElement !== this.hiddenInput &&
@@ -819,7 +830,7 @@ export class DirectKeyboardManager extends ManagerEventEmitter {
 
   shouldRefocusHiddenInput(): boolean {
     const disableFocusManagement = this.callbacks?.getDisableFocusManagement() ?? false;
-    return !disableFocusManagement && !!this.hiddenInput && this.showQuickKeys;
+    return !disableFocusManagement && this.keyboardMode && !!this.hiddenInput && this.showQuickKeys;
   }
 
   refocusHiddenInput(): void {

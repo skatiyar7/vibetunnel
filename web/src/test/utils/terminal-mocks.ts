@@ -9,6 +9,11 @@ export class MockTerminal {
   rows: number = 24;
   options: Record<string, unknown> = { fontSize: 14, theme: {} };
   renderer: unknown = null;
+  wasmTerm = {
+    isAlternateScreen: vi.fn(() => false),
+    hasMouseTracking: vi.fn(() => false),
+  };
+  attachCustomWheelEventHandler = vi.fn();
   buffer = {
     active: {
       cursorY: 0,

@@ -664,37 +664,22 @@ describe('SessionView', () => {
       await element.updateComplete;
     });
 
-    it('should render mobile action bar', async () => {
+    it('should mark the grid as mobile', async () => {
       await element.updateComplete;
 
-      const mobileActionBar = element.querySelector('mobile-action-bar') as
-        | (HTMLElement & { visible: boolean })
-        | null;
       const grid = element.querySelector<HTMLElement>('.session-view-grid');
-      expect(mobileActionBar).toBeTruthy();
-      expect(mobileActionBar?.visible).toBe(true);
       expect(grid?.dataset.mobile).toBe('true');
     });
 
-    it('should hide the mobile action bar while quick keys are visible', async () => {
+    it('should show the quick keys bar when quick keys are visible', async () => {
       const testElement = element as SessionViewTestInterface;
       testElement.uiStateManager.setShowQuickKeys(true);
       await element.updateComplete;
 
-      const mobileActionBar = element.querySelector('mobile-action-bar') as
+      const quickKeys = element.querySelector('terminal-quick-keys') as
         | (HTMLElement & { visible: boolean })
         | null;
-      expect(mobileActionBar?.visible).toBe(false);
-    });
-
-    it('should keep floating keyboard button available when quick keys are visible', async () => {
-      const testElement = element as SessionViewTestInterface;
-      testElement.uiStateManager.setShowQuickKeys(true);
-      await element.updateComplete;
-
-      const keyboardButton = element.querySelector('.mobile-keyboard-button');
-      expect(keyboardButton).toBeTruthy();
-      expect(keyboardButton?.classList.contains('quick-keys-visible')).toBe(true);
+      expect(quickKeys?.visible).toBe(true);
     });
   });
 

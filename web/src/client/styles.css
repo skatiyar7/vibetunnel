@@ -93,18 +93,6 @@
 }
 
 /* Subtle pulse animation for keyboard button visibility */
-@keyframes keyboard-button-pulse {
-  0%, 70%, 100% { 
-    transform: scale(1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(var(--color-primary), 0.3);
-  }
-  35% { 
-    transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), 0 0 12px rgba(var(--color-primary), 0.5);
-    backdrop-filter: blur(16px) saturate(2);
-    -webkit-backdrop-filter: blur(16px) saturate(2);
-  }
-}
 
 @keyframes slideInRight {
   0% {
@@ -1709,8 +1697,7 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
 }
 
 /* Floating action buttons with backdrop blur */
-.scroll-to-bottom,
-.keyboard-button {
+.scroll-to-bottom {
   @apply absolute flex items-center justify-center;
   @apply w-12 h-12 rounded-md;
   @apply bg-bg/20 border border-border/50;
@@ -1727,85 +1714,6 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
   @apply bottom-3 left-3 z-10;
 }
 
-/* Position keyboard button */
-.keyboard-button {
-  @apply fixed;
-  /* Higher z-index than quick keys (48) to appear above them */
-  z-index: 60;
-  /* Default positioning - bottom right */
-  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-  right: calc(0.75rem + env(safe-area-inset-right, 0px));
-  /* Ensure button is always touchable */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  /* Prevent touch delays */
-  -webkit-touch-callout: none;
-  user-select: none;
-  /* Smooth transition when quick keys appear */
-  transition: bottom 0.2s ease-in-out;
-  
-  /* Mobile-specific enhancements */
-  min-width: 48px; /* Ensure minimum touch target size */
-  min-height: 48px;
-  
-  /* Make it more prominent with enhanced styling */
-  @apply bg-primary/30 border-primary/60 text-primary;
-  backdrop-filter: blur(16px) saturate(2);
-  -webkit-backdrop-filter: blur(16px) saturate(2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 12px rgba(var(--color-primary), 0.4);
-  
-  /* Add subtle pulse animation to make it more noticeable */
-  animation: keyboard-button-pulse 4s ease-in-out infinite;
-}
-
-/* Enhanced mobile keyboard button */
-.mobile-keyboard-button {
-  /* Make it larger and more prominent on mobile */
-  @apply w-20 h-16; /* Wider and taller for text */
-  border-radius: 12px; /* More rounded corners */
-  
-  /* Enhanced visual feedback */
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Add stronger border for better visibility */
-  border-width: 2px;
-  
-  /* More prominent background on mobile */
-  @apply bg-primary/40 border-primary/80;
-}
-
-/* Add a glow effect on mobile for better visibility */
-@media (max-width: 768px) {
-  .mobile-keyboard-button {
-    /* Stronger shadow for mobile */
-    box-shadow: 
-      0 4px 20px rgba(0, 0, 0, 0.6), 
-      0 0 20px rgba(var(--color-primary), 0.5),
-      inset 0 0 10px rgba(var(--color-primary), 0.2);
-  }
-  
-  /* Make the pulse more noticeable on mobile */
-  @keyframes keyboard-button-pulse-mobile {
-    0%, 70%, 100% { 
-      transform: scale(1);
-      box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.6), 
-        0 0 20px rgba(var(--color-primary), 0.5),
-        inset 0 0 10px rgba(var(--color-primary), 0.2);
-    }
-    35% { 
-      transform: scale(1.08);
-      box-shadow: 
-        0 6px 24px rgba(0, 0, 0, 0.7), 
-        0 0 30px rgba(var(--color-primary), 0.7),
-        inset 0 0 15px rgba(var(--color-primary), 0.3);
-    }
-  }
-  
-  .mobile-keyboard-button {
-    animation: keyboard-button-pulse-mobile 3s ease-in-out infinite;
-  }
-}
 
 /* Mobile tap-to-focus overlay for terminal */
 .tap-to-focus-overlay {
@@ -1852,63 +1760,16 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
   pointer-events: none;
 }
 
-/* Move keyboard button up when quick keys are visible */
-.keyboard-button.quick-keys-visible {
-  /* Move above quick keys - approximately 100px for 3 rows of buttons */
-  bottom: calc(100px + 0.75rem + env(safe-area-inset-bottom, 0px));
-}
 
-/* Hover state for both buttons */
-.scroll-to-bottom:hover,
-.keyboard-button:hover {
+.scroll-to-bottom:hover {
   @apply bg-bg/40 border-primary text-primary;
   @apply -translate-y-0.5 shadow-glow-sm;
   backdrop-filter: blur(16px) saturate(1.8);
   -webkit-backdrop-filter: blur(16px) saturate(1.8);
 }
 
-/* Active state for both buttons */
-.scroll-to-bottom:active,
-.keyboard-button:active {
+.scroll-to-bottom:active {
   @apply translate-y-0;
-}
-
-/* Responsive keyboard button positioning for mobile orientations */
-@media (max-width: 768px) and (orientation: portrait) {
-  .keyboard-button {
-    /* Center the button horizontally in portrait mode */
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    /* Move it up a bit more to ensure visibility */
-    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  }
-  
-  /* Maintain hover transform when centered */
-  .keyboard-button:hover {
-    transform: translateX(-50%) translateY(-0.125rem); /* -0.5 in Tailwind = -0.125rem */
-  }
-  
-  .keyboard-button:active {
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-@media (max-width: 768px) and (orientation: landscape) {
-  .keyboard-button {
-    /* In landscape, move button more to the left to ensure visibility */
-    right: calc(2rem + env(safe-area-inset-right, 0px));
-    /* Also move it up slightly */
-    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-/* For very small screens (like iPhone SE), make button more prominent */
-@media (max-width: 380px) {
-  .keyboard-button {
-    /* Slightly smaller but still touchable */
-    @apply w-18 h-14;
-  }
 }
 
 /* Debug overlay */
@@ -2365,26 +2226,6 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
   contain: layout style paint;
 }
 
-/* Action bar for special keys - sticks to bottom */
-.mobile-action-bar {
-  flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background-color: rgb(var(--color-bg-secondary));
-  border-top: 1px solid rgb(var(--color-border));
-  /* Add safe area support */
-  padding-bottom: env(safe-area-inset-bottom);
-  /* Smooth transitions */
-  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-}
-
-/* Hide action bar when not needed */
-.mobile-action-bar.hidden {
-  transform: translateY(100%);
-  opacity: 0;
-  pointer-events: none;
-}
 
 /* Terminal viewport adjustments for mobile */
 @media (max-width: 768px) {
@@ -2426,39 +2267,6 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
   -webkit-overflow-scrolling: touch;
 }
 
-/* Action bar special keys */
-.mobile-action-key {
-  @apply px-3 py-2 mx-1 rounded-md;
-  @apply bg-bg-tertiary border border-border;
-  @apply text-text text-sm font-mono;
-  @apply transition-all duration-150;
-  @apply active:scale-95 active:bg-primary/20;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.mobile-action-key:active {
-  @apply bg-primary/20 border-primary;
-}
-
-/* Scrollable action keys container */
-.mobile-action-keys {
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.5rem;
-  gap: 0.25rem;
-  -webkit-overflow-scrolling: touch;
-  /* Hide scrollbar */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.mobile-action-keys::-webkit-scrollbar {
-  display: none;
-}
 
 /* Mobile terminal text overflow handling */
 @media (max-width: 768px) {
@@ -2496,13 +2304,4 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
     /* Compact header in landscape */
     padding-top: 0;
   }
-  
-  .mobile-action-bar {
-    /* Smaller action bar in landscape */
-    padding: 0.25rem;
   }
-  
-  .mobile-action-key {
-    @apply py-1.5 text-xs;
-  }
-}

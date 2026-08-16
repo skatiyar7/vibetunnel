@@ -22,12 +22,11 @@ const createCallbacks = (): OverlaysCallbacks => ({
   onFontSizeChange: vi.fn(),
   onThemeChange: vi.fn(),
   onCloseWidthSelector: vi.fn(),
-  onKeyboardButtonClick: vi.fn(),
   handleBack: vi.fn(),
 });
 
 describe('OverlaysContainer', () => {
-  it('handles the keyboard pointer event without bubbling the follow-up click', async () => {
+  it('does not render a floating keyboard button on mobile', async () => {
     const uiStateManager = new UIStateManager();
     uiStateManager.setIsMobile(true);
     const callbacks = createCallbacks();
@@ -37,20 +36,7 @@ describe('OverlaysContainer', () => {
         .callbacks=${callbacks}
       ></overlays-container>
     `);
-    const keyboardButton = element.querySelector<HTMLElement>('.mobile-keyboard-button');
-    const bubbledClick = vi.fn();
-    element.addEventListener('click', bubbledClick);
 
-    expect(keyboardButton).toBeTruthy();
-
-    const pointerDown = new Event('pointerdown', { bubbles: true, cancelable: true });
-    keyboardButton?.dispatchEvent(pointerDown);
-    const click = new Event('click', { bubbles: true, cancelable: true });
-    keyboardButton?.dispatchEvent(click);
-
-    expect(callbacks.onKeyboardButtonClick).toHaveBeenCalledOnce();
-    expect(pointerDown.defaultPrevented).toBe(true);
-    expect(click.defaultPrevented).toBe(true);
-    expect(bubbledClick).not.toHaveBeenCalled();
+    expect(element.querySelector('.mobile-keyboard-button')).toBeNull();
   });
 });

@@ -225,9 +225,9 @@ export class SessionCreateForm extends LitElement {
       return false;
     }
 
-    // Always set values, using saved values or defaults
-    // Priority: savedWorkingDir > appRepoBasePath > default
-    this.workingDir = formData.workingDir || appRepoBasePath || DEFAULT_REPOSITORY_BASE_PATH;
+    // Always set values, using the configured base path or defaults
+    // Priority: appRepoBasePath > savedWorkingDir > default
+    this.workingDir = appRepoBasePath || formData.workingDir || DEFAULT_REPOSITORY_BASE_PATH;
     this.command = formData.command || 'zsh';
 
     // For spawn window, use saved value or default to false

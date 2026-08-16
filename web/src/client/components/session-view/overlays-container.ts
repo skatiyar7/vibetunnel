@@ -39,9 +39,6 @@ export interface OverlaysCallbacks {
   onThemeChange: (theme: TerminalThemeId) => void;
   onCloseWidthSelector: () => void;
 
-  // Keyboard button
-  onKeyboardButtonClick: () => void;
-
   // Navigation
   handleBack: () => void;
 }
@@ -100,39 +97,6 @@ export class OverlaysContainer extends LitElement {
           ></ctrl-alpha-overlay>
         `;
       })()}
-      
-      <!-- Floating Keyboard Button (for direct keyboard mode on mobile, hidden in chat mode) -->
-      <!-- Always visible when in direct keyboard mode to allow dismissing the keyboard -->
-      ${
-        this.uiState.isMobile && this.uiState.useDirectKeyboard && !this.uiState.chatMode
-          ? html`
-            <div
-              class="keyboard-button mobile-keyboard-button ${this.uiState.showQuickKeys ? 'quick-keys-visible' : ''}"
-              @pointerdown=${(e: PointerEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.callbacks?.onKeyboardButtonClick();
-              }}
-              @click=${(e: Event) => {
-                // The click that follows the tap must NOT bubble to session-view, whose
-                // click handler calls session-view.focus() and steals focus from the
-                // hidden input — which makes iOS immediately close the keyboard we just
-                // opened. (That was the random "TAP doesn't reopen the keyboard" bug.)
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              title="${this.uiState.showQuickKeys ? 'Hide keyboard' : 'Show keyboard'}"
-              role="button"
-              aria-label="Toggle mobile keyboard"
-            >
-              <div class="flex flex-col items-center gap-1">
-                <span class="text-2xl">⌨</span>
-                <span class="text-xs font-medium opacity-90">TAP</span>
-              </div>
-            </div>
-          `
-          : ''
-      }
       
       <!-- Terminal Quick Keys (desktop only) -->
       ${

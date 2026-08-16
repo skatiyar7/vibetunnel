@@ -36,6 +36,8 @@ describe('SessionHeader', () => {
     sidebarCollapsed?: boolean;
     onBack?: () => void;
     onSidebarToggle?: () => void;
+    onSpecialKey?: (key: string) => void;
+    onSendText?: (text: string) => void;
   }): Promise<SessionHeader> {
     const element = await fixture<SessionHeader>(html`
       <session-header
@@ -49,51 +51,71 @@ describe('SessionHeader', () => {
         .sidebarCollapsed=${options.sidebarCollapsed ?? false}
         .onBack=${options.onBack}
         .onSidebarToggle=${options.onSidebarToggle}
+        .onSpecialKey=${options.onSpecialKey}
+        .onSendText=${options.onSendText}
       ></session-header>
     `);
     elements.push(element);
     return element;
   }
 
-  it('renders compact 44px mobile navigation controls and preserves callbacks', async () => {
+  it('renders the compact mobile navigation row and preserves callbacks', async () => {
     const onBack = vi.fn();
-    const onSidebarToggle = vi.fn();
+    const onSpecialKey = vi.fn();
     const element = await renderHeader({
       isMobile: true,
       showBackButton: true,
       showSidebarToggle: true,
       sidebarCollapsed: true,
       onBack,
-      onSidebarToggle,
+      onSpecialKey,
     });
 
     const backButton = element.querySelector<HTMLButtonElement>(
       '[data-testid="session-back-button"]'
     );
+    expect(backButton).toBeTruthy();
+    expect(backButton?.getAttribute('aria-label')).toBe('Back');
+    expect(backButton?.querySelector('svg')).toBeTruthy();
+
+    // Sidebar toggle and chat toggle are hidden on mobile (menu covers them)
     const sidebarButton = element.querySelector<HTMLButtonElement>(
       '[data-testid="session-sidebar-toggle"]'
     );
     const chatButton = element.querySelector<HTMLButtonElement>(
       '[data-testid="chat-mode-toggle-button-compact"]'
     );
-    const menuButton = element.querySelector<HTMLButtonElement>(
-      'compact-menu button[aria-label="More actions menu"]'
-    );
+    expect(sidebarButton?.classList.contains('hidden')).toBe(true);
+    expect(chatButton?.classList.contains('hidden')).toBe(true);
 
-    for (const button of [backButton, sidebarButton, chatButton, menuButton]) {
+    // Navigation keys render compact and forward their key
+    for (const [id, key] of [
+      ['header-page-up-button', 'page_up'],
+      ['header-page-down-button', 'page_down'],
+      ['header-arrow-up-button', 'arrow_up'],
+      ['header-arrow-down-button', 'arrow_down'],
+      ['header-arrow-left-button', 'arrow_left'],
+      ['header-arrow-right-button', 'arrow_right'],
+    ] as const) {
+      const button = element.querySelector<HTMLButtonElement>(`#${id}`);
       expect(button).toBeTruthy();
-      expect(button?.classList.contains('w-11')).toBe(true);
-      expect(button?.classList.contains('h-11')).toBe(true);
+      expect(button?.classList.contains('w-8')).toBe(true);
+      button?.click();
+      expect(onSpecialKey).toHaveBeenLastCalledWith(key);
     }
 
-    expect(backButton?.getAttribute('aria-label')).toBe('Back');
-    expect(backButton?.textContent?.trim()).toBe('');
-    expect(backButton?.querySelector('svg')).toBeTruthy();
-
     backButton?.click();
-    sidebarButton?.click();
     expect(onBack).toHaveBeenCalledTimes(1);
-    expect(onSidebarToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends 1/2 answers from the header answer buttons', async () => {
+    const onSendText = vi.fn();
+    const element = await renderHeader({ isMobile: true, onSendText });
+
+    element.querySelector<HTMLButtonElement>('#header-answer-1-button')?.click();
+    expect(onSendText).toHaveBeenLastCalledWith('1');
+    element.querySelector<HTMLButtonElement>('#header-answer-2-button')?.click();
+    expect(onSendText).toHaveBeenLastCalledWith('2');
   });
 
   it('keeps the desktop back label and responsive sizing classes', async () => {
@@ -117,8 +139,11 @@ describe('SessionHeader', () => {
 
     expect(titleContainer).toBeTruthy();
     expect(titleContainer?.classList.contains('hidden')).toBe(true);
+    expect(element.querySelector('#header-quick-keys-button')).toBeTruthy();
     expect(element.querySelector('#header-keyboard-button')).toBeTruthy();
-    expect(element.querySelector('#header-clipboard-button')).toBeTruthy();
+    expect(element.querySelector('#header-page-up-button')).toBeTruthy();
+    expect(element.querySelector('#header-page-down-button')).toBeTruthy();
     expect(element.querySelector('#header-rerender-button')).toBeTruthy();
+    expect(element.querySelector('#header-clipboard-button')).toBeNull();
   });
 });

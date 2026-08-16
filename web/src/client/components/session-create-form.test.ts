@@ -107,7 +107,7 @@ describe('SessionCreateForm', () => {
       expect(fetchMock.getCalls().some((call) => call[0] === '/api/remotes')).toBe(false);
     });
 
-    it('should load saved values from localStorage', async () => {
+    it('prefers the configured base path over the saved working dir', async () => {
       localStorageMock.getItem.mockImplementation((key) => {
         if (key === 'vibetunnel_last_working_dir') return '/home/user/projects';
         if (key === 'vibetunnel_last_command') return 'npm run dev';
@@ -118,7 +118,9 @@ describe('SessionCreateForm', () => {
         <session-create-form .authClient=${mockAuthClient} .visible=${true}></session-create-form>
       `);
 
-      expect(newElement.workingDir).toBe('/home/user/projects');
+      // Working dir: configured repository base path wins over the remembered
+      // value; the command still comes from localStorage.
+      expect(newElement.workingDir).toBe('~/Documents');
       expect(newElement.command).toBe('npm run dev');
 
       newElement.remove();

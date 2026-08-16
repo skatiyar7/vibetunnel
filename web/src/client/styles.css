@@ -2305,3 +2305,13 @@ body.initial-session-load .session-flex-responsive > session-card:nth-child(n + 
     padding-top: 0;
   }
   }
+
+/* Mobile header action strip: single swipeable row, no visible scrollbar */
+.header-scroll-row {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.header-scroll-row::-webkit-scrollbar {
+  display: none;
+}

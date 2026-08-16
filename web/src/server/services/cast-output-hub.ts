@@ -12,6 +12,14 @@ import {
 
 const logger = createLogger('cast-output-hub');
 
+// Cap how much history is replayed to a (re)connecting client. Full-screen TUIs
+// that never clear the screen (Claude Code repaints in place) keep
+// lastClearOffset near the start of the cast, so long sessions would otherwise
+// replay hours of output on every page load. Starting mid-stream is safe: a
+// partial first line fails JSON.parse and is skipped, and TUIs repaint on the
+// resize that follows connect.
+const MAX_REPLAY_BYTES = 1024 * 1024; // 1 MiB
+
 const HEADER_READ_BUFFER_SIZE = 4096;
 
 type AsciinemaOutputEvent = [number, 'o', string];
@@ -269,6 +277,7 @@ export class CastOutputHub {
       if (fs.existsSync(streamPath)) {
         const stats = fs.statSync(streamPath);
         startOffset = Math.min(startOffset, stats.size);
+        startOffset = Math.max(startOffset, stats.size - MAX_REPLAY_BYTES);
       }
 
       // Read header line (best-effort)

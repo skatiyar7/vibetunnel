@@ -1261,6 +1261,8 @@ export class SessionView extends LitElement {
             .onShowQuickKeys=${() => this.handleQuickKeysButtonClick()}
             .onShowKeyboard=${() => this.handleKeyboardButtonClick()}
             .onPasteClipboard=${() => this.handleClipboardPaste()}
+            .onSpecialKey=${(key: string) => this.handleSpecialKey(key)}
+            .onSendText=${(text: string) => this.inputManager?.sendInputText(text)}
             @close-width-selector=${() => {
               this.uiStateManager.setShowWidthSelector(false);
               this.uiStateManager.setCustomWidth('');

@@ -1302,6 +1302,34 @@ export class SessionCreateForm extends LitElement {
             </button>
           </div>
 
+          <div class="flex gap-1.5 sm:gap-2 px-3 sm:px-4 pt-2 pb-1 flex-shrink-0">
+              <button
+                id="session-cancel-button"
+                class="flex-1 bg-bg-elevated border border-border/50 text-text px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 xl:px-6 xl:py-3 rounded-lg font-mono text-[10px] sm:text-xs lg:text-sm transition-all duration-200 hover:bg-hover hover:border-border"
+                @click=${this.handleCancel}
+                ?disabled=${this.isCreating}
+              >
+                Cancel
+              </button>
+              <button
+                id="session-create-button"
+                class="flex-1 bg-primary text-text-bright px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 xl:px-6 xl:py-3 rounded-lg font-mono text-[10px] sm:text-xs lg:text-sm font-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
+                @click=${this.handleCreate}
+                ?disabled=${
+                  this.disabled ||
+                  this.isCreating ||
+                  this.isLoadingRemoteTargets ||
+                  !!this.remoteTargetError ||
+                  !this.workingDir?.trim() ||
+                  !this.command?.trim() ||
+                  (this.isHQMode &&
+                    !this.remotes.some((remote) => remote.id === this.selectedRemoteId))
+                }
+                data-testid="create-session-submit"
+              >
+                ${this.isCreating ? 'Creating...' : 'Create'}
+              </button>
+            </div>
           <div class="p-3 sm:p-4 overflow-y-auto flex-grow max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-6rem)] lg:max-h-[calc(100vh-4rem)]">
             <!-- Branch Switch Warning -->
             ${
@@ -1498,34 +1526,6 @@ export class SessionCreateForm extends LitElement {
               @follow-mode-changed=${this.handleFollowModeChanged}
             ></form-options-section>
 
-            <div class="flex gap-1.5 sm:gap-2 mt-2 sm:mt-3">
-              <button
-                id="session-cancel-button"
-                class="flex-1 bg-bg-elevated border border-border/50 text-text px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 xl:px-6 xl:py-3 rounded-lg font-mono text-[10px] sm:text-xs lg:text-sm transition-all duration-200 hover:bg-hover hover:border-border"
-                @click=${this.handleCancel}
-                ?disabled=${this.isCreating}
-              >
-                Cancel
-              </button>
-              <button
-                id="session-create-button"
-                class="flex-1 bg-primary text-text-bright px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 xl:px-6 xl:py-3 rounded-lg font-mono text-[10px] sm:text-xs lg:text-sm font-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
-                @click=${this.handleCreate}
-                ?disabled=${
-                  this.disabled ||
-                  this.isCreating ||
-                  this.isLoadingRemoteTargets ||
-                  !!this.remoteTargetError ||
-                  !this.workingDir?.trim() ||
-                  !this.command?.trim() ||
-                  (this.isHQMode &&
-                    !this.remotes.some((remote) => remote.id === this.selectedRemoteId))
-                }
-                data-testid="create-session-submit"
-              >
-                ${this.isCreating ? 'Creating...' : 'Create'}
-              </button>
-            </div>
           </div>
         </div>
       </div>

@@ -35,6 +35,8 @@ export class CompactMenu extends LitElement {
   @property({ type: Function }) onToggleViewMode?: () => void;
   @property({ type: Boolean }) chatMode = false;
   @property({ type: Function }) onToggleChatMode?: () => void;
+  @property({ type: Function }) onPasteClipboard?: () => void;
+  @property({ type: Function }) onSessionList?: () => void;
 
   @state() private showMenu = false;
   @state() private focusedIndex = -1;
@@ -314,6 +316,35 @@ export class CompactMenu extends LitElement {
             : nothing
         }
         
+        <!-- Session List -->
+        <button
+          class="w-full text-left px-4 py-3 text-sm font-mono text-primary hover:bg-surface-hover hover:text-primary flex items-center gap-3 ${this.focusedIndex === menuItemIndex++ ? 'bg-surface-hover text-primary' : ''}"
+          @click=${() => this.handleAction(this.onSessionList)}
+          data-testid="compact-session-list"
+          tabindex="${this.showMenu ? '0' : '-1'}"
+        >
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <rect x="3" y="3" width="6" height="6" rx="1.5" ry="1.5"/>
+            <rect x="11" y="3" width="6" height="6" rx="1.5" ry="1.5"/>
+            <rect x="3" y="11" width="6" height="6" rx="1.5" ry="1.5"/>
+            <rect x="11" y="11" width="6" height="6" rx="1.5" ry="1.5"/>
+          </svg>
+          Session List
+        </button>
+
+        <!-- Paste from Clipboard -->
+        <button
+          class="w-full text-left px-4 py-3 text-sm font-mono text-primary hover:bg-surface-hover hover:text-primary flex items-center gap-3 ${this.focusedIndex === menuItemIndex++ ? 'bg-surface-hover text-primary' : ''}"
+          @click=${() => this.handleAction(this.onPasteClipboard)}
+          data-testid="compact-paste-clipboard"
+          tabindex="${this.showMenu ? '0' : '-1'}"
+        >
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M8 2a1 1 0 00-1 1H5a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2h-2a1 1 0 00-1-1H8zM7 5h6v1H7V5zm-2 3h10v8H5V8z"/>
+          </svg>
+          Paste from Clipboard
+        </button>
+
         <!-- Chat Mode Toggle -->
         <button
           class="w-full text-left px-4 py-3 text-sm font-mono text-primary hover:bg-surface-hover hover:text-primary flex items-center gap-3 ${this.focusedIndex === menuItemIndex++ ? 'bg-surface-hover text-primary' : ''}"

@@ -143,7 +143,8 @@ describe('SessionHeader', () => {
     expect(element.querySelector('#header-keyboard-button')).toBeTruthy();
     expect(element.querySelector('#header-page-up-button')).toBeTruthy();
     expect(element.querySelector('#header-page-down-button')).toBeTruthy();
-    expect(element.querySelector('#header-rerender-button')).toBeTruthy();
+    // Re-render moved into the compact menu; no clipboard button in the strip
+    expect(element.querySelector('#header-rerender-button')).toBeNull();
     expect(element.querySelector('#header-clipboard-button')).toBeNull();
   });
 });

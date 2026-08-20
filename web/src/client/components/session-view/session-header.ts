@@ -150,22 +150,6 @@ export class SessionHeader extends LitElement {
     }
   }
 
-  private getStatusText(): string {
-    if (!this.session) return '';
-    if ('active' in this.session && this.session.active === false) {
-      return 'waiting';
-    }
-    return this.session.status;
-  }
-
-  private getStatusDotColor(): string {
-    if (!this.session) return 'bg-bg-muted';
-    if ('active' in this.session && this.session.active === false) {
-      return 'bg-bg-muted';
-    }
-    return this.session.status === 'running' ? 'bg-status-success' : 'bg-status-warning';
-  }
-
   render() {
     if (!this.session) return null;
 
@@ -241,16 +225,6 @@ export class SessionHeader extends LitElement {
               `
               : ''
           }
-          
-          <!-- Status dot - visible on mobile, after sidebar toggle -->
-          <div class="sm:hidden relative flex-shrink-0">
-            <div class="w-2.5 h-2.5 rounded-full ${this.getStatusDotColor()}"></div>
-            ${
-              this.getStatusText() === 'running'
-                ? html`<div class="absolute inset-0 w-2.5 h-2.5 rounded-full bg-status-success animate-ping opacity-50"></div>`
-                : ''
-            }
-          </div>
           ${
             this.showBackButton
               ? html`
@@ -385,6 +359,40 @@ export class SessionHeader extends LitElement {
                   this.isMobile
                     ? html`
                       <div class="header-scroll-row flex items-center gap-0.5 overflow-x-auto min-w-0">
+                      <!-- Quick answer buttons for numbered prompts (Claude: 1=yes, 2=no) -->
+                      ${(
+                        [
+                          {
+                            id: 'answer-1',
+                            title: 'Answer 1 (yes)',
+                            text: '1',
+                            color: 'text-status-success',
+                          },
+                          {
+                            id: 'answer-2',
+                            title: 'Answer 2 (no)',
+                            text: '2',
+                            color: 'text-status-warning',
+                          },
+                        ] as const
+                      ).map(
+                        (answer) => html`
+                          <button
+                            class="bg-bg-tertiary border border-border rounded-md w-8 h-10 p-0 ${answer.color} transition-all duration-200 hover:bg-surface-hover hover:border-primary flex items-center justify-center flex-shrink-0 font-mono text-sm font-bold"
+                            @click=${(e: Event) => {
+                              e.stopPropagation();
+                              this.onSendText?.(answer.text);
+                            }}
+                            title="${answer.title}"
+                            aria-label="${answer.title}"
+                            id="header-${answer.id}-button"
+                            data-testid="header-${answer.id}-button"
+                          >
+                            ${answer.text}
+                          </button>
+                        `
+                      )}
+
                       <!-- Quick keys toggle button (no native keyboard) -->
                       <button
                         class="bg-bg-tertiary border border-border rounded-md w-8 h-10 p-0 text-primary transition-all duration-200 hover:bg-surface-hover hover:border-primary flex items-center justify-center flex-shrink-0"
@@ -427,45 +435,9 @@ export class SessionHeader extends LitElement {
                         </svg>
                       </button>
 
-                      <!-- Quick answer buttons for numbered prompts (Claude: 1=yes, 2=no) -->
-                      ${(
-                        [
-                          {
-                            id: 'answer-1',
-                            title: 'Answer 1 (yes)',
-                            text: '1',
-                            color: 'text-status-success',
-                          },
-                          {
-                            id: 'answer-2',
-                            title: 'Answer 2 (no)',
-                            text: '2',
-                            color: 'text-status-warning',
-                          },
-                        ] as const
-                      ).map(
-                        (answer) => html`
-                          <button
-                            class="bg-bg-tertiary border border-border rounded-md w-8 h-10 p-0 ${answer.color} transition-all duration-200 hover:bg-surface-hover hover:border-primary flex items-center justify-center flex-shrink-0 font-mono text-sm font-bold"
-                            @click=${(e: Event) => {
-                              e.stopPropagation();
-                              this.onSendText?.(answer.text);
-                            }}
-                            title="${answer.title}"
-                            aria-label="${answer.title}"
-                            id="header-${answer.id}-button"
-                            data-testid="header-${answer.id}-button"
-                          >
-                            ${answer.text}
-                          </button>
-                        `
-                      )}
-
                       <!-- Terminal navigation keys -->
                       ${(
                         [
-                          { id: 'page-up', title: 'Page up', key: 'page_up', glyph: '⇞' },
-                          { id: 'page-down', title: 'Page down', key: 'page_down', glyph: '⇟' },
                           { id: 'arrow-up', title: 'Arrow up', key: 'arrow_up', glyph: '↑' },
                           { id: 'arrow-down', title: 'Arrow down', key: 'arrow_down', glyph: '↓' },
                           { id: 'arrow-left', title: 'Arrow left', key: 'arrow_left', glyph: '←' },
@@ -475,6 +447,8 @@ export class SessionHeader extends LitElement {
                             key: 'arrow_right',
                             glyph: '→',
                           },
+                          { id: 'page-up', title: 'Page up', key: 'page_up', glyph: '⇞' },
+                          { id: 'page-down', title: 'Page down', key: 'page_down', glyph: '⇟' },
                         ] as const
                       ).map(
                         (navKey) => html`
@@ -494,22 +468,6 @@ export class SessionHeader extends LitElement {
                         `
                       )}
 
-                      <!-- Re-render (reload page) button -->
-                      <button
-                        class="bg-bg-tertiary border border-border rounded-md w-8 h-10 p-0 text-primary transition-all duration-200 hover:bg-surface-hover hover:border-primary flex items-center justify-center flex-shrink-0"
-                        @click=${(e: Event) => {
-                          e.stopPropagation();
-                          window.location.reload();
-                        }}
-                        title="Re-render (reload page)"
-                        aria-label="Re-render (reload page)"
-                        id="header-rerender-button"
-                        data-testid="header-rerender-button"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                        </svg>
-                      </button>
                       </div>
                     `
                     : ''
@@ -530,6 +488,7 @@ export class SessionHeader extends LitElement {
                   .session=${this.session}
                   .onPasteClipboard=${this.onPasteClipboard}
                   .onSessionList=${this.onBack}
+                  .onReloadPage=${() => window.location.reload()}
                   .widthLabel=${this.widthLabel}
                   .widthTooltip=${this.widthTooltip}
                   .onOpenFileBrowser=${this.onOpenFileBrowser}

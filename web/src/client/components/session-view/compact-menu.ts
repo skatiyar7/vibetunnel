@@ -37,6 +37,7 @@ export class CompactMenu extends LitElement {
   @property({ type: Function }) onToggleChatMode?: () => void;
   @property({ type: Function }) onPasteClipboard?: () => void;
   @property({ type: Function }) onSessionList?: () => void;
+  @property({ type: Function }) onReloadPage?: () => void;
 
   @state() private showMenu = false;
   @state() private focusedIndex = -1;
@@ -216,16 +217,16 @@ export class CompactMenu extends LitElement {
 
   render() {
     return html`
-      <div class="relative w-[44px] flex-shrink-0">
+      <div class="relative w-8 md:w-auto flex-shrink-0">
         <button
-          class="w-11 h-11 p-0 md:w-auto md:h-auto md:p-2 flex items-center justify-center bg-bg-tertiary border ${this.showMenu ? 'text-primary border-primary' : 'text-primary border-border'} hover:border-primary hover:text-primary hover:bg-surface-hover rounded-lg transition-all duration-200"
+          class="w-8 h-10 p-0 md:w-auto md:h-auto md:p-2 flex items-center justify-center bg-bg-tertiary border ${this.showMenu ? 'text-primary border-primary' : 'text-primary border-border'} hover:border-primary hover:text-primary hover:bg-surface-hover rounded-md transition-all duration-200"
           @click=${this.toggleMenu}
           @keydown=${this.handleMenuButtonKeyDown}
           title="More actions"
           aria-label="More actions menu"
           aria-expanded=${this.showMenu}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
           </svg>
         </button>
@@ -343,6 +344,19 @@ export class CompactMenu extends LitElement {
             <path d="M8 2a1 1 0 00-1 1H5a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2h-2a1 1 0 00-1-1H8zM7 5h6v1H7V5zm-2 3h10v8H5V8z"/>
           </svg>
           Paste from Clipboard
+        </button>
+
+        <!-- Reload Page (re-render) -->
+        <button
+          class="w-full text-left px-4 py-3 text-sm font-mono text-primary hover:bg-surface-hover hover:text-primary flex items-center gap-3 ${this.focusedIndex === menuItemIndex++ ? 'bg-surface-hover text-primary' : ''}"
+          @click=${() => this.handleAction(this.onReloadPage)}
+          data-testid="compact-reload-page"
+          tabindex="${this.showMenu ? '0' : '-1'}"
+        >
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+          </svg>
+          Reload Page
         </button>
 
         <!-- Chat Mode Toggle -->
